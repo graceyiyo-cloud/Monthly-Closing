@@ -2,64 +2,222 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>餐點費用統計系統 - 截圖優化版</title>
+    <title>餐點費用統計系統 - 文青風</title>
+    <!-- 引入 html2canvas 用於截圖功能 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        body { font-family: "Microsoft JhengHei", sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #333; }
-        .control-panel { display: flex; gap: 20px; background: #e9ecef; padding: 20px; border-radius: 6px; margin-bottom: 20px; align-items: center; }
-        .main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .section { border: 1px solid #ddd; border-radius: 6px; padding: 15px; min-height: 550px; background: #fff; display: flex; flex-direction: column; }
-        h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        /* 莫蘭迪色系 (Morandi Colors) 定義 
+           背景: #F2F0EB (溫暖米灰)
+           容器: #FFFFFF
+           主色調(綠): #8FA39D (灰綠 Sage Green)
+           主色調(藍): #7A8B99 (霧霾藍 Dusty Blue)
+           強調色(紅): #C76C6C (乾燥玫瑰/磚紅 Muted Coral)
+           輔助色(米): #E8E6E1
+           文字: #555555 (深灰)
+        */
+
+        body { 
+            font-family: "Microsoft JhengHei", "PingFang TC", sans-serif; 
+            background: #F2F0EB; 
+            color: #555;
+            margin: 0; 
+            padding: 20px; 
+            letter-spacing: 0.05em; /* 增加一點字距更有文青感 */
+        }
         
-        .scroll-area { flex-grow: 1; overflow-y: auto; border: 1px solid #eee; }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03); /* 極柔和陰影 */
+        }
+        
+        h1 { 
+            text-align: center; 
+            color: #5D6D7E; /* 莫蘭迪深藍灰 */
+            font-weight: normal;
+            margin-bottom: 30px;
+        }
+        
+        .control-panel { 
+            display: flex; 
+            gap: 20px; 
+            background: #E8E6E1; /* 溫暖的淺灰 */
+            padding: 20px; 
+            border-radius: 8px; 
+            margin-bottom: 25px; 
+            align-items: center; 
+            color: #666;
+        }
+        
+        /* 輸入選單美化 */
+        select, input[type="file"] {
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #CCC;
+            background: #FAFAFA;
+            color: #555;
+        }
+
+        .main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+        
+        .section { 
+            border: 1px solid #EBEBEB; 
+            border-radius: 8px; 
+            padding: 20px; 
+            min-height: 550px; 
+            background: #fff; 
+            display: flex; 
+            flex-direction: column;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.01);
+        }
+        
+        h3 { 
+            margin-top: 0; 
+            border-bottom: 2px solid #F0F0F0; 
+            padding-bottom: 15px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            color: #777;
+            font-size: 1.1rem;
+        }
+        
+        .scroll-area { 
+            flex-grow: 1; 
+            overflow-y: auto; 
+            border: 1px solid #F5F5F5; 
+            border-radius: 4px;
+        }
+        
+        /* 表格樣式優化 */
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
-        th { background-color: #f8f9fa; position: sticky; top: 0; z-index: 10; }
+        th, td { text-align: left; padding: 12px 15px; border-bottom: 1px solid #F0F0F0; }
         
-        .total-divider { background-color: #fff9e6; font-weight: bold; border-top: 2px solid #ffcc00; border-bottom: 2px solid #ffcc00; }
-        .excluded-header-row { background-color: #f0f0f0; color: #777; font-size: 13px; text-align: center; font-weight: bold; }
-        .excluded-row { background-color: #fafafa; color: #aaa; }
+        th { 
+            background-color: #E0E5DF; /* 莫蘭迪淺綠 */
+            color: #555; 
+            position: sticky; 
+            top: 0; 
+            z-index: 10; 
+            font-weight: 600;
+        }
         
-        .name-cell { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        .red-star { color: #ff0000; font-weight: bold; }
-        .btn-group { display: flex; gap: 8px; }
-        .btn { border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; color: white; font-size: 13px; display: none; }
-        #copyBtn { background-color: #28a745; }
-        #copyImgBtn { background-color: #007bff; }
+        /* 總計分隔線 */
+        .total-divider { 
+            background-color: #FAF9F6; 
+            color: #8D7B68; /* 暖棕色文字 */
+            font-weight: bold; 
+            border-top: 2px solid #C9BCA5; /* 暖沙色 */
+            border-bottom: 2px solid #C9BCA5; 
+        }
         
-        .non-monthly-box { margin-top: 15px; padding: 10px; background: #fff3f3; border-left: 4px solid #d9534f; font-size: 14px; color: #666; }
-        .clickable-date { color: #007bff; text-decoration: underline; cursor: pointer; margin-right: 8px; font-weight: bold; }
+        .excluded-header-row { 
+            background-color: #F7F7F7; 
+            color: #999; 
+            font-size: 13px; 
+            text-align: center; 
+            font-weight: normal; 
+            padding: 8px;
+        }
+        
+        .excluded-row { background-color: #FCFCFC; color: #CCC; }
+        
+        .name-cell { display: flex; align-items: center; gap: 8px; cursor: pointer; transition: color 0.2s; }
+        .name-cell:hover { color: #8FA39D; }
+        
+        .red-star { color: #C76C6C; font-weight: bold; } /* 改為磚紅 */
+        
+        .btn-group { display: flex; gap: 10px; }
+        
+        /* 按鈕莫蘭迪化 */
+        .btn { 
+            border: none; 
+            padding: 8px 15px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            color: white; 
+            font-size: 13px; 
+            display: none; 
+            transition: opacity 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .btn:hover { opacity: 0.9; }
+        
+        #copyBtn { background-color: #8FA39D; } /* 灰綠 */
+        #copyImgBtn { background-color: #7A8B99; } /* 霧霾藍 */
+        
+        .non-monthly-box { 
+            margin-top: 15px; 
+            padding: 12px; 
+            background: #F4EBEB; /* 淺粉灰 */
+            border-left: 4px solid #D68C8C; /* 柔和紅 */
+            font-size: 14px; 
+            color: #888; 
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .clickable-date { 
+            color: #7A8B99; /* 霧霾藍 */
+            text-decoration: underline; 
+            cursor: pointer; 
+            margin-right: 8px; 
+            font-weight: bold; 
+        }
 
         /* 明細區域樣式 */
-        .detail-box { background: #fafafa; padding: 15px; border-radius: 4px; border: 1px inset #eee; flex-grow: 1; overflow-y: auto; }
-        .detail-row { padding: 8px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
-        .detail-content { flex: 1; padding-right: 15px; line-height: 1.4; }
+        .detail-box { 
+            background: #FAFAFA; 
+            padding: 20px; 
+            border-radius: 6px; 
+            border: 1px solid #F0F0F0; 
+            flex-grow: 1; 
+            overflow-y: auto; 
+        }
         
-        /* 正常的編輯框樣式 */
+        .detail-row { 
+            padding: 10px 0; 
+            border-bottom: 1px solid #EEE; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            font-size: 16px; 
+            color: #666;
+        }
+        
+        .detail-content { flex: 1; padding-right: 15px; line-height: 1.5; }
+        
+        /* 正常的編輯框樣式 - 改為柔和的磚紅色 */
         .price-input { 
             width: 70px; 
             text-align: right; 
-            border: 1px solid #ccc; 
+            border: 1px solid #DDD; 
             border-radius: 4px; 
-            padding: 4px; 
+            padding: 5px; 
             font-size: 16px;
             font-weight: bold; 
-            color: #d9534f;
+            color: #C76C6C; /* 磚紅 */
+            background: #FFF;
         }
+        .price-input:focus { outline: 2px solid #E0E5DF; border-color: #8FA39D; }
 
-        /* 截圖時顯示的純文字標籤 (預設隱藏) */
-        .price-text { display: none; font-weight: bold; color: #d9534f; font-size: 16px; }
+        /* 截圖時顯示的純文字標籤 */
+        .price-text { display: none; font-weight: bold; color: #C76C6C; font-size: 16px; }
 
-        /* 截圖模式下的特殊處理：隱藏 Input，顯示純文字 */
+        /* 截圖模式下的特殊處理 */
         .capturing .price-input { display: none !important; }
         .capturing .price-text { display: inline !important; }
-        .capturing .detail-box { overflow: visible !important; height: auto !important; border: none !important; background: white !important; }
-        .capturing .detail-row { border-bottom: 1px solid #ddd; padding: 10px 0; }
-        
-        /* 為了保險起見，加入 Pre 樣式但不影響主體 */
-        pre { background: #f5f5f5; padding: 15px; white-space: pre-wrap; line-height: 1.6; }
+        .capturing .detail-box { 
+            overflow: visible !important; 
+            height: auto !important; 
+            border: none !important; 
+            background: white !important; 
+            padding: 5px !important;
+        }
+        .capturing .detail-row { border-bottom: 1px solid #E0E0E0; padding: 12px 0; }
+        .capturing #imgTitle { color: #555; }
     </style>
 </head>
 <body>
@@ -100,8 +258,8 @@
                 </div>
             </h3>
             <select id="personSelect" style="width: 100%; margin-bottom: 15px;"><option value="">-- 選擇人員 --</option></select>
-            <div id="captureArea" style="background: white; padding: 15px;">
-                <h4 id="imgTitle" style="margin: 0 0 10px 0; display:none; border-bottom: 2px solid #333; padding-bottom: 5px; font-size: 18px;"></h4>
+            <div id="captureArea" style="background: white; padding: 15px; border-radius: 6px;">
+                <h4 id="imgTitle" style="margin: 0 0 15px 0; display:none; border-bottom: 2px solid #8FA39D; padding-bottom: 8px; font-size: 18px; color: #555;"></h4>
                 <div id="personalDetail" class="detail-box"></div>
             </div>
         </div>
@@ -273,7 +431,7 @@
         const stats = personalStats[name];
         if(!stats) return;
         document.getElementById('selectedPersonName').innerHTML = name + (stats.error ? '<span class="red-star">*</span>' : '');
-        document.getElementById('imgTitle').innerHTML = `【${name}${stats.error ? '<span style="color:red">*</span>' : ''} 餐費明細】`;
+        document.getElementById('imgTitle').innerHTML = `【${name}${stats.error ? '<span style="color:#C76C6C">*</span>' : ''} 餐費明細】`;
         document.getElementById('copyBtn').style.display = document.getElementById('copyImgBtn').style.display = 'inline-block';
         
         const box = document.getElementById('personalDetail');
@@ -285,7 +443,7 @@
                 <input type="number" class="price-input" value="${d.price}" oninput="handlePriceChange('${name}', ${index}, this.value, this)">
                 <span class="price-text">${d.price}</span>
             </div>
-        `).join('') + `<hr><div style="text-align:right; font-weight:bold; padding-top:10px; font-size:18px;">總計：<span id="detail-total-${name}">${stats.total}</span> 元</div>`;
+        `).join('') + `<hr style="border:0; border-top:1px dashed #CCC;"><div style="text-align:right; font-weight:bold; padding-top:10px; font-size:18px; color:#555;">總計：<span id="detail-total-${name}" style="color:#C76C6C">${stats.total}</span> 元</div>`;
     }
 
     function renderNonMonthly() {
@@ -305,16 +463,49 @@
 
     document.getElementById('personSelect').addEventListener('change', e => updateDetail(e.target.value));
 
+    // 修改：文字複製功能增加 Fallback 處理
     document.getElementById('copyBtn').addEventListener('click', () => {
         const name = document.getElementById('personSelect').value;
         const stats = personalStats[name];
         let txt = `【${name}${stats.error?'*':''} 明細】\n` + stats.details.map(d=>`${d.date} ${d.text} (${d.price})`).join('\n') + `\n---\n總計：${stats.total}`;
-        navigator.clipboard.writeText(txt).then(()=>alert('文字已複製'));
+        
+        // 嘗試使用現代 Clipboard API
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(txt)
+                .then(() => alert('文字已複製'))
+                .catch(err => {
+                    console.warn("Clipboard API failed, using fallback", err);
+                    fallbackCopyText(txt);
+                });
+        } else {
+            fallbackCopyText(txt);
+        }
     });
 
+    // 輔助函式：傳統方式複製文字 (相容性較好)
+    function fallbackCopyText(text) {
+        var textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed"; 
+        textArea.style.left = "-9999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            var successful = document.execCommand('copy');
+            if(successful) alert('文字已複製 (相容模式)');
+            else alert('複製失敗，請手動複製。');
+        } catch (err) {
+            alert('複製失敗，請手動複製。');
+        }
+        document.body.removeChild(textArea);
+    }
+
+    // 修改：圖片複製功能增加下載作為 Fallback
     document.getElementById('copyImgBtn').addEventListener('click', () => {
         const area = document.getElementById('captureArea');
         const imgTitle = document.getElementById('imgTitle');
+        const personName = document.getElementById('personSelect').value;
         
         imgTitle.style.display = 'block';
         document.body.classList.add('capturing');
@@ -322,17 +513,45 @@
         setTimeout(() => {
             html2canvas(area, { 
                 scale: 2, 
-                backgroundColor: "#ffffff"
+                backgroundColor: "#ffffff" 
             }).then(canvas => {
                 canvas.toBlob(blob => {
-                    navigator.clipboard.write([new ClipboardItem({"image/png": blob})]).then(()=> {
-                        alert('圖片已複製！數字現在顯示為清晰文字。');
-                        imgTitle.style.display = 'none';
-                        document.body.classList.remove('capturing');
-                    });
+                    // 嘗試寫入剪貼簿
+                    if (navigator.clipboard && navigator.clipboard.write) {
+                        const item = new ClipboardItem({ "image/png": blob });
+                        navigator.clipboard.write([item]).then(() => {
+                            alert('圖片已複製！數字現在顯示為清晰文字。');
+                            resetUI();
+                        }).catch(err => {
+                            // 失敗時改為下載
+                            console.warn("Image copy failed, downloading instead", err);
+                            downloadImage(canvas, personName);
+                            resetUI();
+                        });
+                    } else {
+                        // 不支援 Clipboard API 時直接下載
+                        downloadImage(canvas, personName);
+                        resetUI();
+                    }
                 });
+            }).catch(err => {
+                console.error("html2canvas failed", err);
+                resetUI();
             });
         }, 150);
+        
+        function resetUI() {
+            imgTitle.style.display = 'none';
+            document.body.classList.remove('capturing');
+        }
+        
+        function downloadImage(canvas, name) {
+            const link = document.createElement('a');
+            link.download = `餐費明細-${name}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+            alert('由於瀏覽器安全性限制，無法直接複製圖片到剪貼簿。\n已為您改為自動下載圖片檔案！');
+        }
     });
 </script>
 </body>
