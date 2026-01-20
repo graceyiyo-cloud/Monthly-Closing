@@ -148,7 +148,7 @@
             color: white; 
             font-size: 13px; 
             display: none; 
-            transition: opacity 0.2s;
+            transition: opacity 0.2s, background-color 0.2s;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         .btn:hover { opacity: 0.9; }
@@ -485,16 +485,37 @@
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(txt)
                 .then(() => {
-                    console.log('文字已複製 (Clipboard API)');
+                    showCopyFeedback('copyBtn'); // 成功時顯示 UI 回饋
                 })
                 .catch(err => {
                     console.warn("Clipboard API failed, using fallback", err);
-                    fallbackCopyText(txt);
+                    if(fallbackCopyText(txt)) {
+                        showCopyFeedback('copyBtn'); // Fallback 成功時顯示 UI 回饋
+                    }
                 });
         } else {
-            fallbackCopyText(txt);
+            if(fallbackCopyText(txt)) {
+                showCopyFeedback('copyBtn'); // Fallback 成功時顯示 UI 回饋
+            }
         }
     });
+
+    // 新增：顯示複製成功的視覺回饋
+    function showCopyFeedback(btnId) {
+        const btn = document.getElementById(btnId);
+        const originalText = btn.innerHTML; // 保留原始文字(含emoji)
+        
+        btn.innerHTML = "✔️ 已複製！";
+        btn.style.backgroundColor = "#5E7D75"; // 變成深莫蘭迪綠色
+        btn.style.cursor = "default";
+        
+        // 2秒後恢復原狀
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.backgroundColor = ""; // 移除inline style，回復CSS設定
+            btn.style.cursor = "pointer";
+        }, 2000);
+    }
 
     // 輔助函式：傳統方式複製文字 (相容性較好)
     function fallbackCopyText(text) {
@@ -505,17 +526,17 @@
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
+        let success = false;
         try {
-            var successful = document.execCommand('copy');
-            if(successful) {
-                console.log('文字已複製 (Fallback)');
-            } else {
+            success = document.execCommand('copy');
+            if(!success) {
                 alert('複製失敗，請手動複製。');
             }
         } catch (err) {
             alert('複製失敗，請手動複製。');
         }
         document.body.removeChild(textArea);
+        return success;
     }
 
     // 修改：圖片複製功能增加下載作為 Fallback
