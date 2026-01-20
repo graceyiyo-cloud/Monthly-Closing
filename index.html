@@ -466,13 +466,33 @@
     // 修改：文字複製功能增加 Fallback 處理
     document.getElementById('copyBtn').addEventListener('click', () => {
         const name = document.getElementById('personSelect').value;
+        if (!name) return;
+        
+        // 抓取月份邏輯
+        const monthVal = document.getElementById('monthSelect').value; // 格式通常為 "yyyy.mm"
+        let monthStr = "XX";
+        if (monthVal && monthVal.includes('.')) {
+            // 去除前導0，例如 "05" 變 "5"
+            monthStr = parseInt(monthVal.split('.')[1], 10);
+        }
+
         const stats = personalStats[name];
-        let txt = `【${name}${stats.error?'*':''} 明細】\n` + stats.details.map(d=>`${d.date} ${d.text} (${d.price})`).join('\n') + `\n---\n總計：${stats.total}`;
+        
+        // 構建新的複製文案
+        let txt = `${monthStr}月的午餐錢~Line pay或是匯款都可喔\n(不要ipass money)\n\n↓匯款帳號↓\n京城銀行 總行營業部\n054\n001280705711\n\n`;
+        
+        // 加上明細與總額 (調整日期格式為 月/日 以縮短長度)
+        txt += `【${name}${stats.error?'*':''} 明細】\n` + 
+               stats.details.map(d => `${d.date.substring(5).replace('-','/')} ${d.text} (${d.price})`).join('\n') + 
+               `\n---\n總計：${stats.total}`;
         
         // 嘗試使用現代 Clipboard API
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(txt)
-                .then(() => alert('文字已複製'))
+                .then(() => {
+                    // 成功時不顯示 alert，可以在 console 記錄一下
+                    console.log('文字已複製 (Clipboard API)');
+                })
                 .catch(err => {
                     console.warn("Clipboard API failed, using fallback", err);
                     fallbackCopyText(txt);
@@ -493,8 +513,12 @@
         textArea.select();
         try {
             var successful = document.execCommand('copy');
-            if(successful) alert('文字已複製 (相容模式)');
-            else alert('複製失敗，請手動複製。');
+            if(successful) {
+                // 成功時不顯示 alert
+                console.log('文字已複製 (Fallback)');
+            } else {
+                alert('複製失敗，請手動複製。');
+            }
         } catch (err) {
             alert('複製失敗，請手動複製。');
         }
