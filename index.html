@@ -388,12 +388,12 @@
                         <span onclick="selectUser('${name}')">${name}${stats.error ? '<span class="red-star">*</span>' : ''}</span>
                     </div>
                 </td>
-                <td onclick="selectUser('${name}')" id="sum-${name}">${stats.total}</td>
+                <td onclick="selectUser('${name}')" id="sum-${name}">${stats.total.toLocaleString()}</td>
             `;
             if (isExc) excBody.appendChild(tr); else incBody.appendChild(tr);
         });
 
-        document.getElementById('grandTotal').textContent = grandTotal;
+        document.getElementById('grandTotal').textContent = grandTotal.toLocaleString();
         requestAnimationFrame(() => { scrollArea.scrollTop = currentScroll; });
     }
 
@@ -413,16 +413,16 @@
         personalStats[name].details[detailIndex].price = val;
         
         // 同步更新隱藏的純文字標籤內容
-        inputEl.nextElementSibling.textContent = val;
+        inputEl.nextElementSibling.textContent = val.toLocaleString();
 
         const newTotal = personalStats[name].details.reduce((sum, d) => sum + d.price, 0);
         personalStats[name].total = newTotal;
-        document.getElementById(`detail-total-${name}`).textContent = newTotal;
-        document.getElementById(`sum-${name}`).textContent = newTotal;
+        document.getElementById(`detail-total-${name}`).textContent = newTotal.toLocaleString();
+        document.getElementById(`sum-${name}`).textContent = newTotal.toLocaleString();
         
         let grand = 0;
         Object.keys(personalStats).forEach(n => { if (!excludedUsers.has(n)) grand += personalStats[n].total; });
-        document.getElementById('grandTotal').textContent = grand;
+        document.getElementById('grandTotal').textContent = grand.toLocaleString();
     }
 
     function updateDetail(name) {
@@ -439,9 +439,9 @@
             <div class="detail-row">
                 <span class="detail-content">${d.date.substring(5).replace('-','/')}：${d.text}</span>
                 <input type="number" class="price-input" value="${d.price}" oninput="handlePriceChange('${name}', ${index}, this.value, this)">
-                <span class="price-text">${d.price}</span>
+                <span class="price-text">${d.price.toLocaleString()}</span>
             </div>
-        `).join('') + `<hr style="border:0; border-top:1px dashed #CCC;"><div style="text-align:right; font-weight:bold; padding-top:10px; font-size:18px; color:#555;">總計：<span id="detail-total-${name}" style="color:#B05B5B">${stats.total}</span> 元</div>`;
+        `).join('') + `<hr style="border:0; border-top:1px dashed #CCC;"><div style="text-align:right; font-weight:bold; padding-top:10px; font-size:18px; color:#555;">總計：<span id="detail-total-${name}" style="color:#B05B5B">${stats.total.toLocaleString()}</span> 元</div>`;
     }
 
     function renderNonMonthly() {
