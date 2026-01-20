@@ -18,24 +18,25 @@
         body { 
             font-family: "Microsoft JhengHei", "PingFang TC", sans-serif; 
             background: #F2F0EB; 
-            color: #333; /* 文字加深 */
+            color: #333; 
             margin: 0; 
             padding: 20px; 
             letter-spacing: 0.05em; 
         }
         
         .container { 
-            max-width: 1200px; 
+            /* 修改：總寬度縮小為原本的約 2/3 (原本 1200px -> 800px) */
+            max-width: 800px; 
             margin: 0 auto; 
             background: white; 
             padding: 30px; 
             border-radius: 12px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05); /* 陰影稍微加深 */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05); 
         }
         
         h1 { 
             text-align: center; 
-            color: #455A64; /* 加深 - 深藍灰 */
+            color: #455A64; 
             font-weight: normal;
             margin-bottom: 30px;
         }
@@ -48,19 +49,18 @@
             border-radius: 8px; 
             margin-bottom: 25px; 
             align-items: center; 
-            color: #444; /* 文字加深 */
+            color: #444; 
         }
         
-        /* 輸入選單美化 */
         select, input[type="file"] {
             padding: 5px;
             border-radius: 4px;
             border: 1px solid #CCC;
             background: #FAFAFA;
-            color: #333; /* 文字加深 */
+            color: #333; 
         }
 
-        /* 修改：調整 Grid 比例，左側變窄 (1fr : 2fr) */
+        /* 左右欄位比例維持前一次設定 (1:2) */
         .main-content { display: grid; grid-template-columns: 1fr 2fr; gap: 25px; }
         
         .section { 
@@ -81,9 +81,9 @@
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            color: #444; /* 文字加深 */
+            color: #444; 
             font-size: 1.1rem;
-            font-weight: 600; /* 加粗一點 */
+            font-weight: 600; 
         }
         
         .scroll-area { 
@@ -93,29 +93,26 @@
             border-radius: 4px;
         }
         
-        /* 表格樣式優化 */
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         th, td { text-align: left; padding: 12px 15px; border-bottom: 1px solid #F0F0F0; }
         
-        /* 新增：金額欄位 (第二欄) 靠右對齊 */
         #summaryTable th:nth-child(2),
         #summaryTable td:nth-child(2) {
             text-align: right;
         }
         
         th { 
-            background-color: #E0E5DF; /* 莫蘭迪淺綠 */
-            color: #333; /* 文字加深 */
+            background-color: #E0E5DF; 
+            color: #333; 
             position: sticky; 
             top: 0; 
             z-index: 10; 
-            font-weight: 700; /* 加粗 */
+            font-weight: 700; 
         }
         
-        /* 總計分隔線 */
         .total-divider { 
             background-color: #FAF9F6; 
-            color: #5D4037; /* 加深 - 深棕色 */
+            color: #5D4037; 
             font-weight: bold; 
             border-top: 2px solid #C9BCA5; 
             border-bottom: 2px solid #C9BCA5; 
@@ -123,7 +120,7 @@
         
         .excluded-header-row { 
             background-color: #F7F7F7; 
-            color: #777; /* 文字加深 */
+            color: #777; 
             font-size: 13px; 
             text-align: center; 
             font-weight: normal; 
@@ -133,13 +130,12 @@
         .excluded-row { background-color: #FCFCFC; color: #AAA; }
         
         .name-cell { display: flex; align-items: center; gap: 8px; cursor: pointer; transition: color 0.2s; }
-        .name-cell:hover { color: #5E7D75; /* 加深互動色 */ }
+        .name-cell:hover { color: #5E7D75; }
         
         .red-star { color: #C76C6C; font-weight: bold; } 
         
         .btn-group { display: flex; gap: 10px; }
         
-        /* 按鈕莫蘭迪化 */
         .btn { 
             border: none; 
             padding: 8px 15px; 
@@ -153,8 +149,8 @@
         }
         .btn:hover { opacity: 0.9; }
         
-        #copyBtn { background-color: #7A918D; /* 稍微加深灰綠 */ } 
-        #copyImgBtn { background-color: #6B7C8A; /* 稍微加深藍灰 */ } 
+        #copyBtn { background-color: #7A918D; } 
+        #copyImgBtn { background-color: #6B7C8A; } 
         
         .non-monthly-box { 
             margin-top: 15px; 
@@ -162,19 +158,18 @@
             background: #F4EBEB; 
             border-left: 4px solid #D68C8C; 
             font-size: 14px; 
-            color: #666; /* 文字加深 */ 
+            color: #666; 
             border-radius: 0 4px 4px 0;
         }
         
         .clickable-date { 
-            color: #5D6D7E; /* 加深連結色 */
+            color: #5D6D7E; 
             text-decoration: underline; 
             cursor: pointer; 
             margin-right: 8px; 
             font-weight: bold; 
         }
 
-        /* 明細區域樣式 */
         .detail-box { 
             background: #FAFAFA; 
             padding: 20px; 
@@ -191,12 +186,11 @@
             justify-content: space-between; 
             align-items: center; 
             font-size: 16px; 
-            color: #333; /* 文字加深 */
+            color: #333; 
         }
         
         .detail-content { flex: 1; padding-right: 15px; line-height: 1.5; }
         
-        /* 正常的編輯框樣式 */
         .price-input { 
             width: 70px; 
             text-align: right; 
@@ -205,15 +199,13 @@
             padding: 5px; 
             font-size: 16px;
             font-weight: bold; 
-            color: #B05B5B; /* 加深紅 */
+            color: #B05B5B; 
             background: #FFF;
         }
         .price-input:focus { outline: 2px solid #E0E5DF; border-color: #8FA39D; }
 
-        /* 截圖時顯示的純文字標籤 */
         .price-text { display: none; font-weight: bold; color: #B05B5B; font-size: 16px; }
 
-        /* 截圖模式下的特殊處理 */
         .capturing .price-input { display: none !important; }
         .capturing .price-text { display: inline !important; }
         .capturing .detail-box { 
@@ -224,7 +216,7 @@
             padding: 5px !important;
         }
         .capturing .detail-row { border-bottom: 1px solid #E0E0E0; padding: 12px 0; }
-        .capturing #imgTitle { color: #333; } /* 加深 */
+        .capturing #imgTitle { color: #333; } 
     </style>
 </head>
 <body>
@@ -278,7 +270,7 @@
     let excludedUsers = new Set();
     let personalStats = {};
     let nonMonthlyDates = [];
-    let currentSelectedUser = null; // 新增變數記錄當前選擇的人員
+    let currentSelectedUser = null; 
 
     function parseLunchFile(text, targetMonth) {
         const lines = text.split(/\r?\n/);
@@ -318,7 +310,7 @@
             if (nameMatch) {
                 let name = nameMatch[1].trim().replace(/^\$/, ''); 
                 
-                // 修改：若遇到「小計」則跳過不處理
+                // 排除「小計」
                 if (name === "小計") return;
 
                 let content = nameMatch[2].trim();
@@ -368,7 +360,6 @@
         }
         buildTable();
         renderNonMonthly();
-        // 重新整理時若有選中的人，刷新右側
         if (currentSelectedUser && personalStats[currentSelectedUser]) {
             updateDetail(currentSelectedUser);
         }
@@ -413,7 +404,7 @@
     }
 
     function selectUser(name) {
-        currentSelectedUser = name; // 更新當前選中人員
+        currentSelectedUser = name; 
         updateDetail(name);
     }
 
@@ -421,7 +412,6 @@
         const val = parseInt(newPrice) || 0;
         personalStats[name].details[detailIndex].price = val;
         
-        // 同步更新隱藏的純文字標籤內容
         inputEl.nextElementSibling.textContent = val.toLocaleString();
 
         const newTotal = personalStats[name].details.reduce((sum, d) => sum + d.price, 0);
@@ -468,12 +458,10 @@
         } else el.style.display = 'none';
     }
 
-    // 文字複製功能
     document.getElementById('copyBtn').addEventListener('click', () => {
         const name = currentSelectedUser;
         if (!name) return;
         
-        // 抓取月份邏輯
         const monthVal = document.getElementById('monthSelect').value; 
         let monthStr = "XX";
         if (monthVal && monthVal.includes('.')) {
@@ -500,24 +488,21 @@
         }
     });
 
-    // 修改：顯示複製成功的視覺回饋（增加自訂文字參數）
     function showCopyFeedback(btnId, msg = "✔️ 已複製！") {
         const btn = document.getElementById(btnId);
-        const originalText = btn.innerHTML; // 保留原始文字(含emoji)
+        const originalText = btn.innerHTML; 
         
         btn.innerHTML = msg;
-        btn.style.backgroundColor = "#5E7D75"; // 變成深莫蘭迪綠色
+        btn.style.backgroundColor = "#5E7D75"; 
         btn.style.cursor = "default";
         
-        // 2秒後恢復原狀
         setTimeout(() => {
             btn.innerHTML = originalText;
-            btn.style.backgroundColor = ""; // 移除inline style，回復CSS設定
+            btn.style.backgroundColor = ""; 
             btn.style.cursor = "pointer";
         }, 2000);
     }
 
-    // 輔助函式：傳統方式複製文字
     function fallbackCopyText(text) {
         var textArea = document.createElement("textarea");
         textArea.value = text;
@@ -539,7 +524,6 @@
         return success;
     }
 
-    // 修改：圖片複製功能 (移除所有 alert 視窗)
     document.getElementById('copyImgBtn').addEventListener('click', () => {
         const area = document.getElementById('captureArea');
         const imgTitle = document.getElementById('imgTitle');
@@ -554,22 +538,18 @@
                 backgroundColor: "#ffffff" 
             }).then(canvas => {
                 canvas.toBlob(blob => {
-                    // 嘗試寫入剪貼簿
                     if (navigator.clipboard && navigator.clipboard.write) {
                         const item = new ClipboardItem({ "image/png": blob });
                         navigator.clipboard.write([item]).then(() => {
-                            // 成功：只改變按鈕狀態，不彈窗
                             showCopyFeedback('copyImgBtn', '✔️ 已複製！');
                             resetUI();
                         }).catch(err => {
-                            // 失敗：改為下載，並改變按鈕狀態為「已下載」，不彈窗
                             console.warn("Image copy failed, downloading instead", err);
                             downloadImage(canvas, personName);
                             showCopyFeedback('copyImgBtn', '✔️ 已下載');
                             resetUI();
                         });
                     } else {
-                        // 不支援 Clipboard API 時直接下載，不彈窗
                         downloadImage(canvas, personName);
                         showCopyFeedback('copyImgBtn', '✔️ 已下載');
                         resetUI();
@@ -591,7 +571,6 @@
             link.download = `餐費明細-${name}.png`;
             link.href = canvas.toDataURL();
             link.click();
-            // 這裡移除了原本的 alert
         }
     });
 </script>
