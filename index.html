@@ -97,6 +97,12 @@
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         th, td { text-align: left; padding: 12px 15px; border-bottom: 1px solid #F0F0F0; }
         
+        /* 新增：金額欄位 (第二欄) 靠右對齊 */
+        #summaryTable th:nth-child(2),
+        #summaryTable td:nth-child(2) {
+            text-align: right;
+        }
+        
         th { 
             background-color: #E0E5DF; /* 莫蘭迪淺綠 */
             color: #333; /* 文字加深 */
