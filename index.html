@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>餐點費用統計系統 - 截圖優化版</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; }
+        .control-panel { display: flex; gap: 20px; background: #e9ecef; padding: 20px; border-radius: 6px; margin-bottom: 20px; align-items: center; }
+        .main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .section { border: 1px solid #ddd; border-radius: 6px; padding: 15px; min-height: 550px; background: #fff; display: flex; flex-direction: column; }
+        h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .scroll-area { flex-grow: 1; overflow-y: auto; border: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
+        th { background-color: #f8f9fa; position: sticky; top: 0; z-index: 10; }
+        
+        .total-divider { background-color: #fff9e6; font-weight: bold; border-top: 2px solid #ffcc00; border-bottom: 2px solid #ffcc00; }
+        .excluded-header-row { background-color: #f0f0f0; color: #777; font-size: 13px; text-align: center; font-weight: bold; }
+        .excluded-row { background-color: #fafafa; color: #aaa; }
+        
+        .name-cell { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .red-star { color: #ff0000; font-weight: bold; }
+        .btn-group { display: flex; gap: 8px; }
+        .btn { border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; color: white; font-size: 13px; display: none; }
+        #copyBtn { background-color: #28a745; }
+        #copyImgBtn { background-color: #007bff; }
+        
+        .non-monthly-box { margin-top: 15px; padding: 10px; background: #fff3f3; border-left: 4px solid #d9534f; font-size: 14px; color: #666; }
+        .clickable-date { color: #007bff; text-decoration: underline; cursor: pointer; margin-right: 8px; font-weight: bold; }
+
+        /* 明細區域樣式 */
+        .detail-box { background: #fafafa; padding: 15px; border-radius: 4px; border: 1px inset #eee; flex-grow: 1; overflow-y: auto; }
+        .detail-row { padding: 8px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
+        .detail-content { flex: 1; padding-right: 15px; line-height: 1.4; }
+        
+        /* 正常的編輯框樣式 */
+        .price-input { 
+            width: 70px; 
+            text-align: right; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            padding: 4px; 
+            font-size: 16px;
+            font-weight: bold; 
+            color: #d9534f;
+        }
+
+        /* 截圖時顯示的純文字標籤 (預設隱藏) */
+        .price-text { display: none; font-weight: bold; color: #d9534f; font-size: 16px; }
+
+        /* 截圖模式下的特殊處理：隱藏 Input，顯示純文字 */
+        .capturing .price-input { display: none !important; }
+        .capturing .price-text { display: inline !important; }
+        .capturing .detail-box { overflow: visible !important; height: auto !important; border: none !important; background: white !important; }
+        .capturing .detail-row { border-bottom: 1px solid #ddd; padding: 10px 0; }
+        
+        /* 為了保險起見，加入 Pre 樣式但不影響主體 */
+        pre { background: #f5f5f5; padding: 15px; white-space: pre-wrap; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🍱 餐點費用統計系統</h1>
+    <div class="control-panel">
+        <div>1. 上傳檔案：<input type="file" id="fileInput" accept=".txt"></div>
+        <div>2. 選擇月份：<select id="monthSelect"></select></div>
+    </div>
+    <div class="main-content">
+        <div class="section">
+            <h3>人員費用總表</h3>
+            <div class="scroll-area" id="summaryScrollArea">
+                <table id="summaryTable">
+                    <thead><tr><th style="width:70%">姓名</th><th style="width:30%">總額</th></tr></thead>
+                    <tbody id="includedBody"></tbody>
+                    <tbody>
+                        <tr class="total-divider">
+                            <td>全體總計</td>
+                            <td id="grandTotal">0</td>
+                        </tr>
+                        <tr class="excluded-header-row">
+                            <td colspan="2">▼ 排除不計區域 (不列入總額)</td>
+                        </tr>
+                    </tbody>
+                    <tbody id="excludedBody" class="excluded-row"></tbody>
+                </table>
+            </div>
+            <div id="nonMonthlyList" class="non-monthly-box" style="display:none;"></div>
+        </div>
+        <div class="section">
+            <h3>
+                <div>個人明細：<span id="selectedPersonName">-</span></div>
+                <div class="btn-group">
+                    <button id="copyBtn" class="btn">📋 複製文字</button>
+                    <button id="copyImgBtn" class="btn">🖼️ 複製圖片</button>
+                </div>
+            </h3>
+            <select id="personSelect" style="width: 100%; margin-bottom: 15px;"><option value="">-- 選擇人員 --</option></select>
+            <div id="captureArea" style="background: white; padding: 15px;">
+                <h4 id="imgTitle" style="margin: 0 0 10px 0; display:none; border-bottom: 2px solid #333; padding-bottom: 5px; font-size: 18px;"></h4>
+                <div id="personalDetail" class="detail-box"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let rawFileText = "";
+    let forceIncludeDates = new Set();
+    let excludedUsers = new Set();
+    let personalStats = {};
+    let nonMonthlyDates = [];
+
+    function parseLunchFile(text, targetMonth) {
+        const lines = text.split(/\r?\n/);
+        const result = {};
+        const dateRegex = /^(\d{4}\.\d{2}\.\d{2})/;
+        let datePositions = [];
+        nonMonthlyDates = [];
+
+        lines.forEach((line, idx) => {
+            const m = line.match(dateRegex);
+            if (m) datePositions.push({ idx, date: m[1].replace(/\./g, '-') });
+        });
+
+        datePositions.forEach((pos, i) => {
+            if (!pos.date.startsWith(targetMonth.replace('.','-'))) return;
+            const nextIdx = datePositions[i+1] ? datePositions[i+1].idx : lines.length;
+            const dayLines = lines.slice(pos.idx, nextIdx);
+            if (dayLines.some(l => l.includes("$$月結")) || forceIncludeDates.has(pos.date.replace(/-/g, '.'))) {
+                let lunchIdx = dayLines.findLastIndex(l => l.trim() === "午餐");
+                if (lunchIdx !== -1) result[pos.date] = extractDayData(dayLines.slice(lunchIdx));
+            } else {
+                nonMonthlyDates.push(pos.date.replace(/-/g, '.'));
+            }
+        });
+        return result;
+    }
+
+    function extractDayData(lines) {
+        const dayData = {};
+        let mode = "meal";
+        lines.forEach(line => {
+            let t = line.trim();
+            if (t === "---" || t.includes("飲料")) { mode = "drink"; return; }
+            if (t === "午餐") { mode = "meal"; return; }
+            if (!t || t.includes("$$月結") || t.includes("結單")) return;
+            const nameMatch = t.match(/^([^\d\s\-:：]{2,8})\s*[-:：]{1,2}(.*)$/);
+            if (nameMatch) {
+                let name = nameMatch[1].trim().replace(/^\$/, ''); 
+                let content = nameMatch[2].trim();
+                if (!dayData[name]) dayData[name] = { total: 0, items: [], hasError: false };
+                let price = content.includes('=') ? parseInt(content.split('=').pop().match(/\d+/)) : parseInt(content.match(/\d+$/));
+                if (isNaN(price)) { 
+                    dayData[name].hasError = true; 
+                    dayData[name].items.push({ text: "⚠️ " + content, price: 0 }); 
+                } else { 
+                    dayData[name].total += price; 
+                    dayData[name].items.push({ text: content, price: price }); 
+                }
+            }
+        });
+        return dayData;
+    }
+
+    document.getElementById('fileInput').addEventListener('change', e => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            rawFileText = reader.result;
+            const matches = rawFileText.match(/\d{4}\.\d{2}\.\d{2}/g);
+            if(matches) {
+                const months = [...new Set(matches.map(d => d.substring(0, 7)))].sort().reverse();
+                document.getElementById('monthSelect').innerHTML = months.map(m => `<option value="${m}">${m}月</option>`).join('');
+                render();
+            }
+        };
+        reader.readAsText(e.target.files[0]);
+    });
+
+    document.getElementById('monthSelect').addEventListener('change', render);
+
+    function render() {
+        const month = document.getElementById('monthSelect').value;
+        const data = parseLunchFile(rawFileText, month);
+        personalStats = {};
+        for (let date in data) {
+            for (let name in data[date]) {
+                if (!personalStats[name]) personalStats[name] = { total: 0, details: [], error: false };
+                personalStats[name].total += data[date][name].total;
+                if (data[date][name].hasError) personalStats[name].error = true;
+                data[date][name].items.forEach(item => {
+                    personalStats[name].details.push({ date, text: item.text, price: item.price });
+                });
+            }
+        }
+        buildTable();
+        renderNonMonthly();
+    }
+
+    function buildTable() {
+        const scrollArea = document.getElementById('summaryScrollArea');
+        const currentScroll = scrollArea.scrollTop;
+        const incBody = document.getElementById('includedBody');
+        const excBody = document.getElementById('excludedBody');
+        const pSelect = document.getElementById('personSelect');
+        const selVal = pSelect.value;
+
+        incBody.innerHTML = ''; excBody.innerHTML = '';
+        pSelect.innerHTML = '<option value="">-- 選擇人員 --</option>';
+
+        let grandTotal = 0;
+        Object.keys(personalStats).sort().forEach(name => {
+            const isExc = excludedUsers.has(name);
+            const stats = personalStats[name];
+            if (!isExc) grandTotal += stats.total;
+
+            const tr = document.createElement('tr');
+            if (isExc) tr.className = 'excluded-row';
+            tr.innerHTML = `
+                <td>
+                    <div class="name-cell">
+                        <input type="checkbox" ${isExc ? '' : 'checked'} onchange="toggleUser('${name}')">
+                        <span onclick="selectUser('${name}')">${name}${stats.error ? '<span class="red-star">*</span>' : ''}</span>
+                    </div>
+                </td>
+                <td onclick="selectUser('${name}')" id="sum-${name}">${stats.total}</td>
+            `;
+            if (isExc) excBody.appendChild(tr); else incBody.appendChild(tr);
+
+            const opt = document.createElement('option');
+            opt.value = name; opt.textContent = name + (stats.error ? '*' : '');
+            pSelect.appendChild(opt);
+        });
+
+        document.getElementById('grandTotal').textContent = grandTotal;
+        pSelect.value = selVal;
+        requestAnimationFrame(() => { scrollArea.scrollTop = currentScroll; });
+    }
+
+    function toggleUser(name) {
+        if (excludedUsers.has(name)) excludedUsers.delete(name);
+        else excludedUsers.add(name);
+        buildTable();
+    }
+
+    function selectUser(name) {
+        document.getElementById('personSelect').value = name;
+        updateDetail(name);
+    }
+
+    function handlePriceChange(name, detailIndex, newPrice, inputEl) {
+        const val = parseInt(newPrice) || 0;
+        personalStats[name].details[detailIndex].price = val;
+        
+        // 同步更新隱藏的純文字標籤內容
+        inputEl.nextElementSibling.textContent = val;
+
+        const newTotal = personalStats[name].details.reduce((sum, d) => sum + d.price, 0);
+        personalStats[name].total = newTotal;
+        document.getElementById(`detail-total-${name}`).textContent = newTotal;
+        document.getElementById(`sum-${name}`).textContent = newTotal;
+        
+        let grand = 0;
+        Object.keys(personalStats).forEach(n => { if (!excludedUsers.has(n)) grand += personalStats[n].total; });
+        document.getElementById('grandTotal').textContent = grand;
+    }
+
+    function updateDetail(name) {
+        const stats = personalStats[name];
+        if(!stats) return;
+        document.getElementById('selectedPersonName').innerHTML = name + (stats.error ? '<span class="red-star">*</span>' : '');
+        document.getElementById('imgTitle').innerHTML = `【${name}${stats.error ? '<span style="color:red">*</span>' : ''} 餐費明細】`;
+        document.getElementById('copyBtn').style.display = document.getElementById('copyImgBtn').style.display = 'inline-block';
+        
+        const box = document.getElementById('personalDetail');
+        stats.details.sort((a,b)=>a.date.localeCompare(b.date));
+        
+        box.innerHTML = stats.details.map((d, index) => `
+            <div class="detail-row">
+                <span class="detail-content">${d.date.substring(5).replace('-','/')}：${d.text}</span>
+                <input type="number" class="price-input" value="${d.price}" oninput="handlePriceChange('${name}', ${index}, this.value, this)">
+                <span class="price-text">${d.price}</span>
+            </div>
+        `).join('') + `<hr><div style="text-align:right; font-weight:bold; padding-top:10px; font-size:18px;">總計：<span id="detail-total-${name}">${stats.total}</span> 元</div>`;
+    }
+
+    function renderNonMonthly() {
+        const el = document.getElementById('nonMonthlyList');
+        if (nonMonthlyDates.length > 0) {
+            el.style.display = 'block';
+            el.innerHTML = `<strong>非月結日期（點擊可加入）：</strong><br>`;
+            nonMonthlyDates.forEach(date => {
+                const span = document.createElement('span');
+                span.className = 'clickable-date';
+                span.textContent = date;
+                span.onclick = () => { if (confirm(`是否將日期 ${date} 加入月結累計中？`)) { forceIncludeDates.add(date); render(); } };
+                el.appendChild(span);
+            });
+        } else el.style.display = 'none';
+    }
+
+    document.getElementById('personSelect').addEventListener('change', e => updateDetail(e.target.value));
+
+    document.getElementById('copyBtn').addEventListener('click', () => {
+        const name = document.getElementById('personSelect').value;
+        const stats = personalStats[name];
+        let txt = `【${name}${stats.error?'*':''} 明細】\n` + stats.details.map(d=>`${d.date} ${d.text} (${d.price})`).join('\n') + `\n---\n總計：${stats.total}`;
+        navigator.clipboard.writeText(txt).then(()=>alert('文字已複製'));
+    });
+
+    document.getElementById('copyImgBtn').addEventListener('click', () => {
+        const area = document.getElementById('captureArea');
+        const imgTitle = document.getElementById('imgTitle');
+        
+        imgTitle.style.display = 'block';
+        document.body.classList.add('capturing');
+        
+        setTimeout(() => {
+            html2canvas(area, { 
+                scale: 2, 
+                backgroundColor: "#ffffff"
+            }).then(canvas => {
+                canvas.toBlob(blob => {
+                    navigator.clipboard.write([new ClipboardItem({"image/png": blob})]).then(()=> {
+                        alert('圖片已複製！數字現在顯示為清晰文字。');
+                        imgTitle.style.display = 'none';
+                        document.body.classList.remove('capturing');
+                    });
+                });
+            });
+        }, 150);
+    });
+</script>
+</body>
+</html>
