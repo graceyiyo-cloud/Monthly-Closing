@@ -258,7 +258,7 @@
                     <button id="copyImgBtn" class="btn">🖼️ 複製圖片</button>
                 </div>
             </h3>
-            <select id="personSelect" style="width: 100%; margin-bottom: 15px;"><option value="">-- 選擇人員 --</option></select>
+            <!-- 下拉選單已移除 -->
             <div id="captureArea" style="background: white; padding: 15px; border-radius: 6px;">
                 <h4 id="imgTitle" style="margin: 0 0 15px 0; display:none; border-bottom: 2px solid #8FA39D; padding-bottom: 8px; font-size: 18px; color: #333;"></h4>
                 <div id="personalDetail" class="detail-box"></div>
@@ -273,6 +273,7 @@
     let excludedUsers = new Set();
     let personalStats = {};
     let nonMonthlyDates = [];
+    let currentSelectedUser = null; // 新增變數記錄當前選擇的人員
 
     function parseLunchFile(text, targetMonth) {
         const lines = text.split(/\r?\n/);
@@ -358,6 +359,10 @@
         }
         buildTable();
         renderNonMonthly();
+        // 重新整理時若有選中的人，刷新右側
+        if (currentSelectedUser && personalStats[currentSelectedUser]) {
+            updateDetail(currentSelectedUser);
+        }
     }
 
     function buildTable() {
@@ -365,11 +370,8 @@
         const currentScroll = scrollArea.scrollTop;
         const incBody = document.getElementById('includedBody');
         const excBody = document.getElementById('excludedBody');
-        const pSelect = document.getElementById('personSelect');
-        const selVal = pSelect.value;
 
         incBody.innerHTML = ''; excBody.innerHTML = '';
-        pSelect.innerHTML = '<option value="">-- 選擇人員 --</option>';
 
         let grandTotal = 0;
         Object.keys(personalStats).sort().forEach(name => {
@@ -389,14 +391,9 @@
                 <td onclick="selectUser('${name}')" id="sum-${name}">${stats.total}</td>
             `;
             if (isExc) excBody.appendChild(tr); else incBody.appendChild(tr);
-
-            const opt = document.createElement('option');
-            opt.value = name; opt.textContent = name + (stats.error ? '*' : '');
-            pSelect.appendChild(opt);
         });
 
         document.getElementById('grandTotal').textContent = grandTotal;
-        pSelect.value = selVal;
         requestAnimationFrame(() => { scrollArea.scrollTop = currentScroll; });
     }
 
@@ -407,7 +404,7 @@
     }
 
     function selectUser(name) {
-        document.getElementById('personSelect').value = name;
+        currentSelectedUser = name; // 更新當前選中人員
         updateDetail(name);
     }
 
@@ -462,11 +459,9 @@
         } else el.style.display = 'none';
     }
 
-    document.getElementById('personSelect').addEventListener('change', e => updateDetail(e.target.value));
-
-    // 修改：文字複製功能增加 Fallback 處理
+    // 修改：文字複製功能 (移除名字與總計，只留收款資訊)
     document.getElementById('copyBtn').addEventListener('click', () => {
-        const name = document.getElementById('personSelect').value;
+        const name = currentSelectedUser;
         if (!name) return;
         
         // 抓取月份邏輯
@@ -477,20 +472,13 @@
             monthStr = parseInt(monthVal.split('.')[1], 10);
         }
 
-        const stats = personalStats[name];
-        
-        // 構建新的複製文案 (不含明細)
-        let txt = `${monthStr}月的午餐錢~Line pay或是匯款都可喔\n(不要ipass money)\n\n↓匯款帳號↓\n京城銀行 總行營業部\n054\n001280705711\n\n`;
-        
-        // 只顯示總額，不顯示詳細列表
-        txt += `【${name}${stats.error?'*':''}】\n` + 
-               `總計：${stats.total} 元`;
+        // 構建新的複製文案 (移除明細與總額)
+        let txt = `${monthStr}月的午餐錢~Line pay或是匯款都可喔\n(不要ipass money)\n\n↓匯款帳號↓\n京城銀行 總行營業部\n054\n001280705711`;
         
         // 嘗試使用現代 Clipboard API
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(txt)
                 .then(() => {
-                    // 成功時不顯示 alert，可以在 console 記錄一下
                     console.log('文字已複製 (Clipboard API)');
                 })
                 .catch(err => {
@@ -514,7 +502,6 @@
         try {
             var successful = document.execCommand('copy');
             if(successful) {
-                // 成功時不顯示 alert
                 console.log('文字已複製 (Fallback)');
             } else {
                 alert('複製失敗，請手動複製。');
@@ -529,7 +516,7 @@
     document.getElementById('copyImgBtn').addEventListener('click', () => {
         const area = document.getElementById('captureArea');
         const imgTitle = document.getElementById('imgTitle');
-        const personName = document.getElementById('personSelect').value;
+        const personName = currentSelectedUser;
         
         imgTitle.style.display = 'block';
         document.body.classList.add('capturing');
