@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>餐點費用統計系統 - 文青風</title>
-    <!-- 引入 html2canvas 用於截圖功能 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         /* 莫蘭迪色系 (Morandi Colors) 定義 
@@ -61,7 +60,8 @@
             color: #333; /* 文字加深 */
         }
 
-        .main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+        /* 修改：調整 Grid 比例，左側變窄 (1fr : 2fr) */
+        .main-content { display: grid; grid-template-columns: 1fr 2fr; gap: 25px; }
         
         .section { 
             border: 1px solid #EBEBEB; 
@@ -162,7 +162,7 @@
             background: #F4EBEB; 
             border-left: 4px solid #D68C8C; 
             font-size: 14px; 
-            color: #666; /* 文字加深 */
+            color: #666; /* 文字加深 */ 
             border-radius: 0 4px 4px 0;
         }
         
@@ -264,7 +264,6 @@
                     <button id="copyImgBtn" class="btn">🖼️ 複製圖片</button>
                 </div>
             </h3>
-            <!-- 下拉選單已移除 -->
             <div id="captureArea" style="background: white; padding: 15px; border-radius: 6px;">
                 <h4 id="imgTitle" style="margin: 0 0 15px 0; display:none; border-bottom: 2px solid #8FA39D; padding-bottom: 8px; font-size: 18px; color: #333;"></h4>
                 <div id="personalDetail" class="detail-box"></div>
@@ -318,6 +317,10 @@
             const nameMatch = t.match(/^([^\d\s\-:：]{2,8})\s*[-:：]{1,2}(.*)$/);
             if (nameMatch) {
                 let name = nameMatch[1].trim().replace(/^\$/, ''); 
+                
+                // 修改：若遇到「小計」則跳過不處理
+                if (name === "小計") return;
+
                 let content = nameMatch[2].trim();
                 if (!dayData[name]) dayData[name] = { total: 0, items: [], hasError: false };
                 let price = content.includes('=') ? parseInt(content.split('=').pop().match(/\d+/)) : parseInt(content.match(/\d+$/));
@@ -465,47 +468,44 @@
         } else el.style.display = 'none';
     }
 
-    // 修改：文字複製功能 (移除名字與總計，只留收款資訊)
+    // 文字複製功能
     document.getElementById('copyBtn').addEventListener('click', () => {
         const name = currentSelectedUser;
         if (!name) return;
         
         // 抓取月份邏輯
-        const monthVal = document.getElementById('monthSelect').value; // 格式通常為 "yyyy.mm"
+        const monthVal = document.getElementById('monthSelect').value; 
         let monthStr = "XX";
         if (monthVal && monthVal.includes('.')) {
-            // 去除前導0，例如 "05" 變 "5"
             monthStr = parseInt(monthVal.split('.')[1], 10);
         }
 
-        // 構建新的複製文案 (移除明細與總額)
         let txt = `${monthStr}月的午餐錢~Line pay或是匯款都可喔\n(不要ipass money)\n\n↓匯款帳號↓\n京城銀行 總行營業部\n054\n001280705711`;
         
-        // 嘗試使用現代 Clipboard API
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(txt)
                 .then(() => {
-                    showCopyFeedback('copyBtn'); // 成功時顯示 UI 回饋
+                    showCopyFeedback('copyBtn'); 
                 })
                 .catch(err => {
                     console.warn("Clipboard API failed, using fallback", err);
                     if(fallbackCopyText(txt)) {
-                        showCopyFeedback('copyBtn'); // Fallback 成功時顯示 UI 回饋
+                        showCopyFeedback('copyBtn'); 
                     }
                 });
         } else {
             if(fallbackCopyText(txt)) {
-                showCopyFeedback('copyBtn'); // Fallback 成功時顯示 UI 回饋
+                showCopyFeedback('copyBtn'); 
             }
         }
     });
 
-    // 新增：顯示複製成功的視覺回饋
-    function showCopyFeedback(btnId) {
+    // 修改：顯示複製成功的視覺回饋（增加自訂文字參數）
+    function showCopyFeedback(btnId, msg = "✔️ 已複製！") {
         const btn = document.getElementById(btnId);
         const originalText = btn.innerHTML; // 保留原始文字(含emoji)
         
-        btn.innerHTML = "✔️ 已複製！";
+        btn.innerHTML = msg;
         btn.style.backgroundColor = "#5E7D75"; // 變成深莫蘭迪綠色
         btn.style.cursor = "default";
         
@@ -517,7 +517,7 @@
         }, 2000);
     }
 
-    // 輔助函式：傳統方式複製文字 (相容性較好)
+    // 輔助函式：傳統方式複製文字
     function fallbackCopyText(text) {
         var textArea = document.createElement("textarea");
         textArea.value = text;
@@ -539,7 +539,7 @@
         return success;
     }
 
-    // 修改：圖片複製功能增加下載作為 Fallback
+    // 修改：圖片複製功能 (移除所有 alert 視窗)
     document.getElementById('copyImgBtn').addEventListener('click', () => {
         const area = document.getElementById('captureArea');
         const imgTitle = document.getElementById('imgTitle');
@@ -558,17 +558,20 @@
                     if (navigator.clipboard && navigator.clipboard.write) {
                         const item = new ClipboardItem({ "image/png": blob });
                         navigator.clipboard.write([item]).then(() => {
-                            alert('圖片已複製！數字現在顯示為清晰文字。');
+                            // 成功：只改變按鈕狀態，不彈窗
+                            showCopyFeedback('copyImgBtn', '✔️ 已複製！');
                             resetUI();
                         }).catch(err => {
-                            // 失敗時改為下載
+                            // 失敗：改為下載，並改變按鈕狀態為「已下載」，不彈窗
                             console.warn("Image copy failed, downloading instead", err);
                             downloadImage(canvas, personName);
+                            showCopyFeedback('copyImgBtn', '✔️ 已下載');
                             resetUI();
                         });
                     } else {
-                        // 不支援 Clipboard API 時直接下載
+                        // 不支援 Clipboard API 時直接下載，不彈窗
                         downloadImage(canvas, personName);
+                        showCopyFeedback('copyImgBtn', '✔️ 已下載');
                         resetUI();
                     }
                 });
@@ -588,7 +591,7 @@
             link.download = `餐費明細-${name}.png`;
             link.href = canvas.toDataURL();
             link.click();
-            alert('由於瀏覽器安全性限制，無法直接複製圖片到剪貼簿。\n已為您改為自動下載圖片檔案！');
+            // 這裡移除了原本的 alert
         }
     });
 </script>
