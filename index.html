@@ -185,7 +185,8 @@
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            font-size: 16px; 
+            /* 修改：字體縮小至 14px */
+            font-size: 14px; 
             color: #333; 
         }
         
@@ -197,14 +198,16 @@
             border: 1px solid #DDD; 
             border-radius: 4px; 
             padding: 5px; 
-            font-size: 16px;
+            /* 修改：字體縮小至 14px */
+            font-size: 14px;
             font-weight: bold; 
             color: #B05B5B; 
             background: #FFF;
         }
         .price-input:focus { outline: 2px solid #E0E5DF; border-color: #8FA39D; }
 
-        .price-text { display: none; font-weight: bold; color: #B05B5B; font-size: 16px; }
+        /* 修改：字體縮小至 14px */
+        .price-text { display: none; font-weight: bold; color: #B05B5B; font-size: 14px; }
 
         .capturing .price-input { display: none !important; }
         .capturing .price-text { display: inline !important; }
@@ -354,12 +357,10 @@
                 personalStats[name].total += data[date][name].total;
                 if (data[date][name].hasError) personalStats[name].error = true;
                 
-                // 修改處：將同一天的項目合併為一行
+                // 將同一天的項目合併為一行
                 const items = data[date][name].items;
                 if (items.length > 0) {
-                    // 合併名稱
                     const combinedText = items.map(item => item.text).join('、');
-                    // 使用當日總計金額
                     const dayTotal = data[date][name].total;
                     
                     personalStats[name].details.push({ 
@@ -446,13 +447,14 @@
         const box = document.getElementById('personalDetail');
         stats.details.sort((a,b)=>a.date.localeCompare(b.date));
         
+        // 修改：明細列表底部總計字體微調至 16px (配合列表縮小)
         box.innerHTML = stats.details.map((d, index) => `
             <div class="detail-row">
                 <span class="detail-content">${d.date.substring(5).replace('-','/')}：${d.text}</span>
                 <input type="number" class="price-input" value="${d.price}" oninput="handlePriceChange('${name}', ${index}, this.value, this)">
                 <span class="price-text">${d.price.toLocaleString()}</span>
             </div>
-        `).join('') + `<hr style="border:0; border-top:1px dashed #CCC;"><div style="text-align:right; font-weight:bold; padding-top:10px; font-size:18px; color:#555;">總計：<span id="detail-total-${name}" style="color:#B05B5B">${stats.total.toLocaleString()}</span> 元</div>`;
+        `).join('') + `<hr style="border:0; border-top:1px dashed #CCC;"><div style="text-align:right; font-weight:bold; padding-top:10px; font-size:16px; color:#555;">總計：<span id="detail-total-${name}" style="color:#B05B5B">${stats.total.toLocaleString()}</span> 元</div>`;
     }
 
     function renderNonMonthly() {
