@@ -25,7 +25,7 @@
         }
         
         .container { 
-            /* 修改：總寬度縮小為原本的約 2/3 (原本 1200px -> 800px) */
+            /* 總寬度縮小為原本的約 2/3 */
             max-width: 800px; 
             margin: 0 auto; 
             background: white; 
@@ -60,7 +60,7 @@
             color: #333; 
         }
 
-        /* 左右欄位比例維持前一次設定 (1:2) */
+        /* 左右欄位比例維持 (1:2) */
         .main-content { display: grid; grid-template-columns: 1fr 2fr; gap: 25px; }
         
         .section { 
@@ -353,9 +353,21 @@
                 if (!personalStats[name]) personalStats[name] = { total: 0, details: [], error: false };
                 personalStats[name].total += data[date][name].total;
                 if (data[date][name].hasError) personalStats[name].error = true;
-                data[date][name].items.forEach(item => {
-                    personalStats[name].details.push({ date, text: item.text, price: item.price });
-                });
+                
+                // 修改處：將同一天的項目合併為一行
+                const items = data[date][name].items;
+                if (items.length > 0) {
+                    // 合併名稱
+                    const combinedText = items.map(item => item.text).join('、');
+                    // 使用當日總計金額
+                    const dayTotal = data[date][name].total;
+                    
+                    personalStats[name].details.push({ 
+                        date: date, 
+                        text: combinedText, 
+                        price: dayTotal 
+                    });
+                }
             }
         }
         buildTable();
