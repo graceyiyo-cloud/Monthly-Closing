@@ -2,21 +2,12 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>月結餐點費用統計 - 文青風</title>
+    <title>月結餐點費用統計</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        /* 莫蘭迪色系 (Morandi Colors) 定義 
-           背景: #F2F0EB (溫暖米灰)
-           容器: #FFFFFF
-           主色調(綠): #8FA39D (灰綠 Sage Green)
-           主色調(藍): #7A8B99 (霧霾藍 Dusty Blue)
-           強調色(紅): #C76C6C (乾燥玫瑰/磚紅 Muted Coral)
-           輔助色(米): #E8E6E1
-           文字: #333333 (加深 - 深黑灰)
-        */
-
+        /* 莫蘭迪色系 (Morandi Colors) 定義 */
         body { 
-            font-family: "Microsoft JhengHei", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft JhengHei", sans-serif; 
             background: #F2F0EB; 
             color: #333; 
             margin: 0; 
@@ -25,7 +16,6 @@
         }
         
         .container { 
-            /* 整體畫面總寬度配合調整，由 800px 增加至 1000px */
             max-width: 1000px; 
             margin: 0 auto; 
             background: white; 
@@ -60,7 +50,6 @@
             color: #333; 
         }
 
-        /* 調整人員費用總表比例，使其更寬一點 (1.2fr : 2fr) */
         .main-content { display: grid; grid-template-columns: 1.2fr 2fr; gap: 25px; }
         
         .section { 
@@ -109,15 +98,7 @@
             z-index: 10; 
             font-weight: 700; 
         }
-        
-        .total-divider { 
-            background-color: #FAF9F6; 
-            color: #5D4037; 
-            font-weight: bold; 
-            border-top: 2px solid #C9BCA5; 
-            border-bottom: 2px solid #C9BCA5; 
-        }
-        
+
         .excluded-header-row { 
             background-color: #F7F7F7; 
             color: #777; 
@@ -229,16 +210,20 @@
     </div>
     <div class="main-content">
         <div class="section">
-            <h3>人員費用總表</h3>
+            <h3>
+                <span>人員費用總計</span>
+                <span id="grandTotalDisplay" style="color: #5D4037;">0</span>
+            </h3>
             <div class="scroll-area" id="summaryScrollArea">
                 <table id="summaryTable">
-                    <thead><tr><th style="width:70%">姓名</th><th style="width:30%">總額</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th style="width:70%">姓名</th>
+                            <th style="width:30%">金額</th>
+                        </tr>
+                    </thead>
                     <tbody id="includedBody"></tbody>
                     <tbody>
-                        <tr class="total-divider">
-                            <td>全體總計</td>
-                            <td id="grandTotal">0</td>
-                        </tr>
                         <tr class="excluded-header-row">
                             <td colspan="2">▼ 排除不計區域 (不列入總額)</td>
                         </tr>
@@ -400,7 +385,7 @@
             if (isExc) excBody.appendChild(tr); else incBody.appendChild(tr);
         });
 
-        document.getElementById('grandTotal').textContent = grandTotal.toLocaleString();
+        document.getElementById('grandTotalDisplay').textContent = grandTotal.toLocaleString();
         requestAnimationFrame(() => { scrollArea.scrollTop = currentScroll; });
     }
 
@@ -428,7 +413,7 @@
         
         let grand = 0;
         Object.keys(personalStats).forEach(n => { if (!excludedUsers.has(n)) grand += personalStats[n].total; });
-        document.getElementById('grandTotal').textContent = grand.toLocaleString();
+        document.getElementById('grandTotalDisplay').textContent = grand.toLocaleString();
     }
 
     function updateDetail(name) {
