@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>餐點費用統計系統 - 文青風</title>
+    <title>月結餐點費用統計 - 文青風</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         /* 莫蘭迪色系 (Morandi Colors) 定義 
@@ -16,7 +16,7 @@
         */
 
         body { 
-            font-family: "Microsoft JhengHei", "PingFang TC", sans-serif; 
+            font-family: "Microsoft JhengHei", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
             background: #F2F0EB; 
             color: #333; 
             margin: 0; 
@@ -25,8 +25,8 @@
         }
         
         .container { 
-            /* 總寬度縮小為原本的約 2/3 */
-            max-width: 800px; 
+            /* 整體畫面總寬度配合調整，由 800px 增加至 1000px */
+            max-width: 1000px; 
             margin: 0 auto; 
             background: white; 
             padding: 30px; 
@@ -60,8 +60,8 @@
             color: #333; 
         }
 
-        /* 左右欄位比例維持 (1:2) */
-        .main-content { display: grid; grid-template-columns: 1fr 2fr; gap: 25px; }
+        /* 調整人員費用總表比例，使其更寬一點 (1.2fr : 2fr) */
+        .main-content { display: grid; grid-template-columns: 1.2fr 2fr; gap: 25px; }
         
         .section { 
             border: 1px solid #EBEBEB; 
@@ -185,7 +185,6 @@
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            /* 修改：字體縮小至 14px */
             font-size: 14px; 
             color: #333; 
         }
@@ -198,7 +197,6 @@
             border: 1px solid #DDD; 
             border-radius: 4px; 
             padding: 5px; 
-            /* 修改：字體縮小至 14px */
             font-size: 14px;
             font-weight: bold; 
             color: #B05B5B; 
@@ -206,7 +204,6 @@
         }
         .price-input:focus { outline: 2px solid #E0E5DF; border-color: #8FA39D; }
 
-        /* 修改：字體縮小至 14px */
         .price-text { display: none; font-weight: bold; color: #B05B5B; font-size: 14px; }
 
         .capturing .price-input { display: none !important; }
@@ -225,7 +222,7 @@
 <body>
 
 <div class="container">
-    <h1>🍱 餐點費用統計系統</h1>
+    <h1>月結餐點費用統計</h1>
     <div class="control-panel">
         <div>1. 上傳檔案：<input type="file" id="fileInput" accept=".txt"></div>
         <div>2. 選擇月份：<select id="monthSelect"></select></div>
@@ -312,8 +309,6 @@
             const nameMatch = t.match(/^([^\d\s\-:：]{2,8})\s*[-:：]{1,2}(.*)$/);
             if (nameMatch) {
                 let name = nameMatch[1].trim().replace(/^\$/, ''); 
-                
-                // 排除「小計」
                 if (name === "小計") return;
 
                 let content = nameMatch[2].trim();
@@ -357,7 +352,6 @@
                 personalStats[name].total += data[date][name].total;
                 if (data[date][name].hasError) personalStats[name].error = true;
                 
-                // 將同一天的項目合併為一行
                 const items = data[date][name].items;
                 if (items.length > 0) {
                     const combinedText = items.map(item => item.text).join('、');
@@ -447,7 +441,6 @@
         const box = document.getElementById('personalDetail');
         stats.details.sort((a,b)=>a.date.localeCompare(b.date));
         
-        // 修改：明細列表底部總計字體微調至 16px (配合列表縮小)
         box.innerHTML = stats.details.map((d, index) => `
             <div class="detail-row">
                 <span class="detail-content">${d.date.substring(5).replace('-','/')}：${d.text}</span>
