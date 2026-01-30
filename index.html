@@ -207,6 +207,7 @@
     <div class="control-panel">
         <div>1. 上傳檔案：<input type="file" id="fileInput" accept=".txt"></div>
         <div>2. 選擇月份：<select id="monthSelect"></select></div>
+        <div style="margin-left:auto;"><button onclick="clearAllData()" style="font-size: 11px; background: none; border: 1px solid #ccc; color: #999; cursor: pointer; border-radius: 4px; padding: 2px 8px;">手動清除所有緩存</button></div>
     </div>
     <div class="main-content">
         <div class="section">
@@ -257,13 +258,72 @@
     let nonMonthlyDates = [];
     let currentSelectedUser = null; 
 
+    // 初始化載入
+    window.onload = function() {
+        loadFromLocalStorage();
+    };
+
+    function saveToLocalStorage() {
+        const data = {
+            rawFileText: rawFileText,
+            forceIncludeDates: Array.from(forceIncludeDates),
+            excludedUsers: Array.from(excludedUsers),
+            lastSelectedMonth: document.getElementById('monthSelect').value
+        };
+        localStorage.setItem('lunchStatsData', JSON.stringify(data));
+    }
+
+    function loadFromLocalStorage() {
+        const saved = localStorage.getItem('lunchStatsData');
+        if (saved) {
+            const data = JSON.parse(saved);
+            rawFileText = data.rawFileText || "";
+            forceIncludeDates = new Set(data.forceIncludeDates || []);
+            excludedUsers = new Set(data.excludedUsers || []);
+            
+            if (rawFileText) {
+                updateMonthDropdown(data.lastSelectedMonth);
+                render();
+            }
+        }
+    }
+
+    function clearAllData(silent = false) {
+        if(silent || confirm("確定要清除所有紀錄並重設網頁嗎？")) {
+            localStorage.removeItem('lunchStatsData');
+            rawFileText = "";
+            forceIncludeDates = new Set();
+            excludedUsers = new Set();
+            personalStats = {};
+            currentSelectedUser = null;
+            document.getElementById('monthSelect').innerHTML = '';
+            document.getElementById('selectedPersonName').textContent = '-';
+            document.getElementById('personalDetail').innerHTML = '';
+            document.getElementById('copyBtn').style.display = 'none';
+            document.getElementById('copyImgBtn').style.display = 'none';
+            if(!silent) location.reload();
+        }
+    }
+
+    function updateMonthDropdown(preSelected) {
+        const matches = rawFileText.match(/\d{4}\.\d{2}\.\d{2}/g);
+        if(matches) {
+            const months = [...new Set(matches.map(d => d.substring(0, 7)))].sort().reverse();
+            const select = document.getElementById('monthSelect');
+            select.innerHTML = months.map(m => `<option value="${m}">${m}月</option>`).join('');
+            if (preSelected && months.includes(preSelected)) {
+                select.value = preSelected;
+            }
+        }
+    }
+
     function parseLunchFile(text, targetMonth) {
         const lines = text.split(/\r?\n/);
         const result = {};
         const dateRegex = /^(\d{4}\.\d{2}\.\d{2})/;
         let datePositions = [];
         nonMonthlyDates = [];
-
+        
         lines.forEach((line, idx) => {
             const m = line.match(dateRegex);
             if (m) datePositions.push({ idx, date: m[1].replace(/\./g, '-') });
@@ -312,23 +372,36 @@
     }
 
     document.getElementById('fileInput').addEventListener('change', e => {
+        if (!e.target.files[0]) return;
+        
+        // 重新上傳時，直接清空所有緩存
+        clearAllData(true); 
+
         const reader = new FileReader();
         reader.onload = () => {
             rawFileText = reader.result;
-            const matches = rawFileText.match(/\d{4}\.\d{2}\.\d{2}/g);
-            if(matches) {
-                const months = [...new Set(matches.map(d => d.substring(0, 7)))].sort().reverse();
-                document.getElementById('monthSelect').innerHTML = months.map(m => `<option value="${m}">${m}月</option>`).join('');
-                render();
-            }
+            updateMonthDropdown();
+            render();
+            saveToLocalStorage();
         };
         reader.readAsText(e.target.files[0]);
     });
 
-    document.getElementById('monthSelect').addEventListener('change', render);
+    document.getElementById('monthSelect').addEventListener('change', () => {
+        render();
+        saveToLocalStorage();
+    });
 
     function render() {
-        const month = document.getElementById('monthSelect').value;
+        const monthSelect = document.getElementById('monthSelect');
+        const month = monthSelect.value;
+        if(!month) {
+            document.getElementById('includedBody').innerHTML = '';
+            document.getElementById('excludedBody').innerHTML = '';
+            document.getElementById('grandTotalDisplay').textContent = '0';
+            return;
+        }
+        
         const data = parseLunchFile(rawFileText, month);
         personalStats = {};
         for (let date in data) {
@@ -354,6 +427,11 @@
         renderNonMonthly();
         if (currentSelectedUser && personalStats[currentSelectedUser]) {
             updateDetail(currentSelectedUser);
+        } else {
+            document.getElementById('selectedPersonName').textContent = '-';
+            document.getElementById('personalDetail').innerHTML = '';
+            document.getElementById('copyBtn').style.display = 'none';
+            document.getElementById('copyImgBtn').style.display = 'none';
         }
     }
 
@@ -393,6 +471,7 @@
         if (excludedUsers.has(name)) excludedUsers.delete(name);
         else excludedUsers.add(name);
         buildTable();
+        saveToLocalStorage();
     }
 
     function selectUser(name) {
@@ -444,7 +523,13 @@
                 const span = document.createElement('span');
                 span.className = 'clickable-date';
                 span.textContent = date;
-                span.onclick = () => { if (confirm(`是否將日期 ${date} 加入月結累計中？`)) { forceIncludeDates.add(date); render(); } };
+                span.onclick = () => { 
+                    if (confirm(`是否將日期 ${date} 加入月結累計中？`)) { 
+                        forceIncludeDates.add(date); 
+                        render(); 
+                        saveToLocalStorage();
+                    } 
+                };
                 el.appendChild(span);
             });
         } else el.style.display = 'none';
