@@ -56,12 +56,15 @@
             border: 1px solid #EBEBEB; 
             border-radius: 8px; 
             padding: 20px; 
-            min-height: 550px; 
+            min-height: 260px; 
             background: #fff; 
             display: flex; 
             flex-direction: column;
             box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            margin-bottom: 25px;
         }
+
+        .left-column { display: flex; flex-direction: column; }
         
         h3 { 
             margin-top: 0; 
@@ -80,13 +83,16 @@
             overflow-y: auto; 
             border: 1px solid #F5F5F5; 
             border-radius: 4px;
+            max-height: 400px;
         }
         
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         th, td { text-align: left; padding: 12px 15px; border-bottom: 1px solid #F0F0F0; }
         
         #summaryTable th:nth-child(2),
-        #summaryTable td:nth-child(2) {
+        #summaryTable td:nth-child(2),
+        #dailyTable th:nth-child(2),
+        #dailyTable td:nth-child(2) {
             text-align: right;
         }
         
@@ -210,31 +216,52 @@
         <div style="margin-left:auto;"><button onclick="clearAllData()" style="font-size: 11px; background: none; border: 1px solid #ccc; color: #999; cursor: pointer; border-radius: 4px; padding: 2px 8px;">手動清除所有緩存</button></div>
     </div>
     <div class="main-content">
-        <div class="section">
-            <h3>
-                <span>人員費用總計</span>
-                <span id="grandTotalDisplay" style="color: #5D4037;">0</span>
-            </h3>
-            <div class="scroll-area" id="summaryScrollArea">
-                <table id="summaryTable">
-                    <thead>
-                        <tr>
-                            <th style="width:70%">姓名</th>
-                            <th style="width:30%">金額</th>
-                        </tr>
-                    </thead>
-                    <tbody id="includedBody"></tbody>
-                    <tbody>
-                        <tr class="excluded-header-row">
-                            <td colspan="2">▼ 排除不計區域 (不列入總額)</td>
-                        </tr>
-                    </tbody>
-                    <tbody id="excludedBody" class="excluded-row"></tbody>
-                </table>
+        <div class="left-column">
+            <div class="section">
+                <h3>
+                    <span>人員費用總計</span>
+                    <span id="grandTotalDisplay" style="color: #5D4037;">0</span>
+                </h3>
+                <div class="scroll-area" id="summaryScrollArea">
+                    <table id="summaryTable">
+                        <thead>
+                            <tr>
+                                <th style="width:70%">姓名</th>
+                                <th style="width:30%">金額</th>
+                            </tr>
+                        </thead>
+                        <tbody id="includedBody"></tbody>
+                        <tbody>
+                            <tr class="excluded-header-row">
+                                <td colspan="2">▼ 排除不計區域 (不列入總額)</td>
+                            </tr>
+                        </tbody>
+                        <tbody id="excludedBody" class="excluded-row"></tbody>
+                    </table>
+                </div>
+                <div id="nonMonthlyList" class="non-monthly-box" style="display:none;"></div>
             </div>
-            <div id="nonMonthlyList" class="non-monthly-box" style="display:none;"></div>
+
+            <div class="section">
+                <h3>
+                    <span>每日結算總額</span>
+                    <span id="dailyGrandTotalDisplay" style="color: #5D4037;">0</span>
+                </h3>
+                <div class="scroll-area">
+                    <table id="dailyTable">
+                        <thead>
+                            <tr>
+                                <th style="width:60%">日期</th>
+                                <th style="width:40%">當日總額</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dailyBody"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-        <div class="section">
+
+        <div class="section" style="min-height: 600px;">
             <h3>
                 <div>個人明細：<span id="selectedPersonName">-</span></div>
                 <div class="btn-group">
@@ -255,10 +282,10 @@
     let forceIncludeDates = new Set();
     let excludedUsers = new Set();
     let personalStats = {};
+    let dailyStats = {};
     let nonMonthlyDates = [];
     let currentSelectedUser = null; 
 
-    // 初始化載入
     window.onload = function() {
         loadFromLocalStorage();
     };
@@ -295,6 +322,7 @@
             forceIncludeDates = new Set();
             excludedUsers = new Set();
             personalStats = {};
+            dailyStats = {};
             currentSelectedUser = null;
             document.getElementById('monthSelect').innerHTML = '';
             document.getElementById('selectedPersonName').textContent = '-';
@@ -373,10 +401,7 @@
 
     document.getElementById('fileInput').addEventListener('change', e => {
         if (!e.target.files[0]) return;
-        
-        // 重新上傳時，直接清空所有緩存
         clearAllData(true); 
-
         const reader = new FileReader();
         reader.onload = () => {
             rawFileText = reader.result;
@@ -398,16 +423,24 @@
         if(!month) {
             document.getElementById('includedBody').innerHTML = '';
             document.getElementById('excludedBody').innerHTML = '';
+            document.getElementById('dailyBody').innerHTML = '';
             document.getElementById('grandTotalDisplay').textContent = '0';
+            document.getElementById('dailyGrandTotalDisplay').textContent = '0';
             return;
         }
         
         const data = parseLunchFile(rawFileText, month);
         personalStats = {};
+        dailyStats = {};
+
         for (let date in data) {
+            if (!dailyStats[date]) dailyStats[date] = 0;
             for (let name in data[date]) {
                 if (!personalStats[name]) personalStats[name] = { total: 0, details: [], error: false };
+                
                 personalStats[name].total += data[date][name].total;
+                dailyStats[date] += data[date][name].total;
+
                 if (data[date][name].hasError) personalStats[name].error = true;
                 
                 const items = data[date][name].items;
@@ -424,6 +457,7 @@
             }
         }
         buildTable();
+        buildDailyTable();
         renderNonMonthly();
         if (currentSelectedUser && personalStats[currentSelectedUser]) {
             updateDetail(currentSelectedUser);
@@ -463,8 +497,22 @@
             if (isExc) excBody.appendChild(tr); else incBody.appendChild(tr);
         });
 
-        document.getElementById('grandTotalDisplay').textContent = grandTotal.toLocaleString();
+        updateTotalDisplays(grandTotal);
         requestAnimationFrame(() => { scrollArea.scrollTop = currentScroll; });
+    }
+
+    function buildDailyTable() {
+        const dailyBody = document.getElementById('dailyBody');
+        dailyBody.innerHTML = '';
+        
+        Object.keys(dailyStats).sort().forEach(date => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${date.replace(/-/g, '/')}</td>
+                <td id="daily-sum-${date}" style="font-weight:bold; color:#455A64;">${dailyStats[date].toLocaleString()}</td>
+            `;
+            dailyBody.appendChild(tr);
+        });
     }
 
     function toggleUser(name) {
@@ -481,18 +529,31 @@
 
     function handlePriceChange(name, detailIndex, newPrice, inputEl) {
         const val = parseInt(newPrice) || 0;
+        const oldPrice = personalStats[name].details[detailIndex].price;
+        const date = personalStats[name].details[detailIndex].date;
+
         personalStats[name].details[detailIndex].price = val;
-        
         inputEl.nextElementSibling.textContent = val.toLocaleString();
 
         const newTotal = personalStats[name].details.reduce((sum, d) => sum + d.price, 0);
         personalStats[name].total = newTotal;
+        
         document.getElementById(`detail-total-${name}`).textContent = newTotal.toLocaleString();
         document.getElementById(`sum-${name}`).textContent = newTotal.toLocaleString();
         
+        const diff = val - oldPrice;
+        dailyStats[date] += diff;
+        const dailyEl = document.getElementById(`daily-sum-${date}`);
+        if(dailyEl) dailyEl.textContent = dailyStats[date].toLocaleString();
+
         let grand = 0;
         Object.keys(personalStats).forEach(n => { if (!excludedUsers.has(n)) grand += personalStats[n].total; });
-        document.getElementById('grandTotalDisplay').textContent = grand.toLocaleString();
+        updateTotalDisplays(grand);
+    }
+
+    function updateTotalDisplays(total) {
+        document.getElementById('grandTotalDisplay').textContent = total.toLocaleString();
+        document.getElementById('dailyGrandTotalDisplay').textContent = total.toLocaleString();
     }
 
     function updateDetail(name) {
@@ -541,38 +602,30 @@
         
         const monthVal = document.getElementById('monthSelect').value; 
         let monthStr = "XX";
-        if (monthVal && monthVal.includes('.')) {
-            monthStr = parseInt(monthVal.split('.')[1], 10);
+        if (monthVal && (monthVal.includes('-') || monthVal.includes('.'))) {
+            const separator = monthVal.includes('-') ? '-' : '.';
+            monthStr = parseInt(monthVal.split(separator)[1], 10);
         }
 
         let txt = `${monthStr}月的午餐錢~Line pay或是匯款都可喔\n(不要ipass money)\n\n↓匯款帳號↓\n京城銀行 總行營業部\n054\n001280705711`;
         
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(txt)
-                .then(() => {
-                    showCopyFeedback('copyBtn'); 
-                })
+                .then(() => { showCopyFeedback('copyBtn'); })
                 .catch(err => {
-                    console.warn("Clipboard API failed, using fallback", err);
-                    if(fallbackCopyText(txt)) {
-                        showCopyFeedback('copyBtn'); 
-                    }
+                    if(fallbackCopyText(txt)) showCopyFeedback('copyBtn'); 
                 });
         } else {
-            if(fallbackCopyText(txt)) {
-                showCopyFeedback('copyBtn'); 
-            }
+            if(fallbackCopyText(txt)) showCopyFeedback('copyBtn'); 
         }
     });
 
     function showCopyFeedback(btnId, msg = "✔️ 已複製！") {
         const btn = document.getElementById(btnId);
         const originalText = btn.innerHTML; 
-        
         btn.innerHTML = msg;
         btn.style.backgroundColor = "#5E7D75"; 
         btn.style.cursor = "default";
-        
         setTimeout(() => {
             btn.innerHTML = originalText;
             btn.style.backgroundColor = ""; 
@@ -589,14 +642,7 @@
         textArea.focus();
         textArea.select();
         let success = false;
-        try {
-            success = document.execCommand('copy');
-            if(!success) {
-                alert('複製失敗，請手動複製。');
-            }
-        } catch (err) {
-            alert('複製失敗，請手動複製。');
-        }
+        try { success = document.execCommand('copy'); } catch (err) {}
         document.body.removeChild(textArea);
         return success;
     }
@@ -605,15 +651,11 @@
         const area = document.getElementById('captureArea');
         const imgTitle = document.getElementById('imgTitle');
         const personName = currentSelectedUser;
-        
         imgTitle.style.display = 'block';
         document.body.classList.add('capturing');
         
         setTimeout(() => {
-            html2canvas(area, { 
-                scale: 2, 
-                backgroundColor: "#ffffff" 
-            }).then(canvas => {
+            html2canvas(area, { scale: 2, backgroundColor: "#ffffff" }).then(canvas => {
                 canvas.toBlob(blob => {
                     if (navigator.clipboard && navigator.clipboard.write) {
                         const item = new ClipboardItem({ "image/png": blob });
@@ -621,7 +663,6 @@
                             showCopyFeedback('copyImgBtn', '✔️ 已複製！');
                             resetUI();
                         }).catch(err => {
-                            console.warn("Image copy failed, downloading instead", err);
                             downloadImage(canvas, personName);
                             showCopyFeedback('copyImgBtn', '✔️ 已下載');
                             resetUI();
@@ -632,10 +673,7 @@
                         resetUI();
                     }
                 });
-            }).catch(err => {
-                console.error("html2canvas failed", err);
-                resetUI();
-            });
+            }).catch(err => { resetUI(); });
         }, 150);
         
         function resetUI() {
